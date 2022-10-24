@@ -8,10 +8,11 @@ function serverVisualizationCallbackWrapper(src, evt)
 
 switch src.app.mode
     case 'US'
-        n_data = src.UserData.n.samples * src.UserData.n.channels;
-        data = reshape(read(src, n_data, "double"), src.UserData.n.samples, src.UserData.n.channels);
+        msg = read(src, src.UserData.n+1, "double");
+        src.app.update_unipolar_stream_data(msg(1), msg(2:end));
     case 'BS'
-        
+        msg = read(src, src.UserData.n+1, "double");
+        src.app.update_bipolar_stream_data(msg(1), msg(2:end));        
     case 'UA'
         
     case 'BA'

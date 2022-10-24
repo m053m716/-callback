@@ -1,13 +1,13 @@
-function handleStreamBufferFilledEvent__BS(src, evt, visualizer)
+function handleStreamBufferFilledEvent__BS(src, evt, visualizer, subset)
 %HANDLESTREAMBUFFERFILLEDEVENT__BS  Callback for FrameFilledEvent from StreamBuffer class.
 %
 % Syntax:
-%   callback.handleStreamBufferFilledEvent__BS(src, evt, visualizer);
+%   callback.handleStreamBufferFilledEvent__BS(src, evt, visualizer, subset);
 
 % [~, idx] = sort(src.index, 'ascend');
 % data = src.samples(:, idx)';
 % visualizer.write(data(:), "double");
-
-disp("Bipolar stream handling not configured.");
+data = ([subset - 65, src.samples(subset,:)])'; % Prepend one sample indicating which channel
+visualizer.write(data(:), "double");
 
 end
