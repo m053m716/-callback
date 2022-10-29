@@ -6,13 +6,13 @@ function serverVisualizationCallbackWrapper(src, evt)
 %
 % See also: callback, deploy__tmsi_tcp_servers, SAGA_Data_Visualizer
 
-switch src.app.mode
+switch src.UserData.app.mode
     case 'US'
         msg = read(src, src.UserData.n+1, "double");
-        src.app.update_unipolar_stream_data(msg(1), msg(2:end));
+        src.UserData.app.update_unipolar_stream_data(msg(1), msg(2:end));
     case 'BS'
         msg = read(src, src.UserData.n+1, "double");
-        src.app.update_bipolar_stream_data(msg(1), msg(2:end));        
+        src.UserData.app.update_bipolar_stream_data(msg(1), msg(2:end));        
     case 'UA'
         
     case 'BA'
