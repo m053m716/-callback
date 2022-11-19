@@ -37,69 +37,77 @@ function serverHandleControllerMessages(src, ~)
 %   -> I don't pretend to understand IT security etc. etc. -- use my shitty
 %           code at your own risk! <-
 
-data = readline(src);
-info = strsplit(data, '.');
-switch string(lower(info{1}))
-    case "set"
-        f = strtrim(string(lower(info{2})));
-        if ismember(class(src.UserData.(f)), ["string", "char"])
-            val = string(strtrim(info{3}));
-            src.UserData.(f) = val;
-            switch f
-                case "state"  % Then broadcast the state change.
-                    src.UserData.udp.write([char(src.UserData.state) 10], ...
-                        "string", src.UserData.address, src.UserData.port.state);
-                case "file"
-                    src.UserData.udp.write([char(fullfile(src.UserData.datashare, src.UserData.file)) 10], ...
-                        "string", src.UserData.address, src.UserData.port.name);
-                otherwise
-                    src.UserData.udp.write([char(sprintf("%s.%s", info{2}, info{3})) 10], ...
-                        "string", src.UserData.address, src.UserData.port.extra); 
+while src.NumBytesAvailable > 0
+    data = readline(src);
+    info = strsplit(data, '.');
+    switch info{1}
+        case 'set'
+            if ~callback.serverHandleControllerSetterMessage(src, info{2}, info{3})
+                fprintf(1, "CONTROLLER::SET::INVALID=%s\n", data);
             end
-            fprintf(1, "CONTROLLER::SET::%s=%s\n", f, val);
-        else
-            fprintf(1, "CONTROLLER::SET::INVALID=%s\n", data);
-            return;
-        end
-    case "get"
-        switch string(strtrim(lower(info{2})))
-            case "prop"
-                f = strtrim(string(lower(info{3})));
-                if ismember(class(src.UserData.(f)), ["string", "char"])
-                    writeline(src, src.UserData.(f));
-                else
+        case 'get'
+            switch string(strtrim(lower(info{2})))
+                case "prop"
+                    f = strtrim(string(lower(info{3})));
+                    if ismember(class(src.UserData.(f)), ["string", "char"])
+                        writeline(src, src.UserData.(f));
+                    else
+                        fprintf(1, "CONTROLLER::GET::INVALID=%s\n", data);
+                        return;
+                    end
+                case "recv"
+                    
+                otherwise
                     fprintf(1, "CONTROLLER::GET::INVALID=%s\n", data);
                     return;
-                end
-            case "recv"
-                
-            otherwise
-                fprintf(1, "CONTROLLER::GET::INVALID=%s\n", data);
-                return;
-        end
-    case "vis"
-        fprintf(1,'Received command: %s\n', data);
-        vserver = src.UserData.visualizer.(info{2}); 
-        switch string(lower(info{3}))
-            case "US"
-                n_samples = src.app.cfg.SAGA.(tag).Channels.n.samples + 1;
-                configureCallback(vserver, "byte", 8*n_samples, ...
-                    @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
-
-            case "BS"
-                n_samples = src.app.cfg.SAGA.(tag).Channels.n.samples + 1;
-                configureCallback(vserver, "byte", 8*n_samples, ...
-                    @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
-            case "UA"
-            case "BA"
-            case "UR"
-            case "IR"
-            case "RC"
-            otherwise
-                fprintf(1,'Unexpected visualization mode key: %s\n', string(lower(info{4})));
-        end
-        vserver.flush("input");
-    otherwise
-        error("Bad syntax on server request.");
+            end
+        case 'vis'
+            fprintf(1,'Received command: %s\n', data);
+		    tag = info{3};
+            vserver = src.UserData.visualizer.(tag); 
+            switch info{2}
+                case 'US' %Unipolar stream
+                    n_samples = vserver.UserData.app.cfg.SAGA.Channels.n.samples + 1;
+                    configureCallback(vserver, "byte", 8*n_samples, ...
+                        @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
+                    % <mode>.<tag>.<apply_car>.<i_subset>
+                    msg = [char(sprintf("%s.%s.%s.%s", info{2}, tag, info{4}, info{5}))];
+                    src.UserData.udp.writeline(msg, src.UserData.address, src.UserData.port.extra); 
+                case 'BS' %Bipolar stream
+                    n_samples = vserver.UserData.app.cfg.SAGA.Channels.n.samples + 1;
+                    configureCallback(vserver, "byte", 8*n_samples, ...
+                        @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
+                    % <mode>.<tag>.<i_subset>
+                    msg = [char(sprintf("%s.%s.%s", info{2}, tag, info{4}))];
+                    src.UserData.udp.writeline(msg, src.UserData.address, src.UserData.port.extra); 
+                case 'UA' %Unipolar averages
+                    n_samples = vserver.UserData.app.cfg.SAGA.Channels.n.samples + 1;
+                    configureCallback(vserver, "byte", 8*n_samples, ...
+                        @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
+                    % <mode>.<tag>.<apply_car>.<sample_ch>
+                    msg = [char(sprintf("%s.%s.%s.%s", info{2}, tag, info{4}, info{5}))];
+                    src.UserData.udp.writeline(msg, src.UserData.address, src.UserData.port.extra); 
+                case 'BA' %Bipolar averages
+                    n_samples = vserver.UserData.app.cfg.SAGA.Channels.n.samples + 1;
+                    configureCallback(vserver, "byte", 8*n_samples, ...
+                        @(src, evt)callback.serverVisualizationCallbackWrapper(src, evt));
+                    % <mode>.<tag>.<sample_ch>
+                    msg = [char(sprintf("%s.%s.%s", info{2}, tag, info{4}))];
+                    src.UserData.udp.writeline(msg, src.UserData.address, src.UserData.port.extra); 
+                case 'UR' %Unipolar raster
+                    msg = '(UR not handled -- no message)';
+                case 'IR' %ICA raster
+                    msg = '(IR not handled -- no message)';
+                case 'RC' %RMS contour
+                    msg = '(RC not handled -- no message)';
+                otherwise
+                    fprintf(1,'Unexpected visualization mode key: %s\n', string(lower(info{4})));
+            end
+            vserver.flush("input");
+            fprintf(1,'Flushed server-%s input buffer.\n', tag);
+            fprintf(1,'\t->\tSent message: %s\n', msg);
+        otherwise
+            error("Bad syntax on server request.");
+    end
 end
 end

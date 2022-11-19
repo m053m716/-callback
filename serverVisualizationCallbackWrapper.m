@@ -25,8 +25,9 @@ switch src.UserData.app.mode
         disp("Unipolar raster mode not yet implemented.");
         
     case 'IS'
-        msg = read(src, src.UserData.n+1, "double");
-        src.UserData.app.update_ica_stream_data(msg(1), msg(2:end));
+%         msg = read(src, src.UserData.n+1, "double");
+%         src.UserData.app.update_ica_stream_data(msg(1), msg(2:end));
+        disp("ICA mode not yet implemented.");
         
     case 'IR'
         disp("ICA raster mode not yet implemented.");

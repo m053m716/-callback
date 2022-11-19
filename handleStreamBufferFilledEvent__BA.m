@@ -1,13 +1,12 @@
-function handleStreamBufferFilledEvent__BA(src, evt, visualizer)
+function handleStreamBufferFilledEvent__BA(src, evt, visualizer, selected_channel, trig_ch)
 %HANDLESTREAMBUFFERFILLEDEVENT__BA  Callback for FrameFilledEvent from StreamBuffer class (Bipolar Averaging).
 %
 % Syntax:
 %   callback.handleStreamBufferFilledEvent__BA(src, evt, visualizer);
-
-data = ([[1, mean(src.samples(subset,:), 1)]; ... % Prepend 1 indicating first moment
-         [2, std(src.samples(subset,:),0,1)]; ... % Prepend 0 to indicate "time" channel
-         [0, src.index./src.sample_rate]])'; ...  % Prepend 2 indicating second moment
-visualizer.write(data(:), "double");
+[~,sample_order] = sort(src.index./src.sample_rate, 'ascend');
+samples = src.samples(selected_channel, sample_order);
+data = ([[0, src.samples(trig_ch, sample_order)]; ... % Prepend 0 indicating triggers
+         [1, samples]])';                             % Prepend 1 indicating data
 visualizer.write(data(:), "double");
 
 end
