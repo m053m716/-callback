@@ -12,13 +12,8 @@ if apply_car
     samples(vec,:) = samples(vec,:) - mean(samples(vec,:),1);
 end
 samples(setdiff(1:size(samples,1), subset), :) = []; % Remove extras.
-if strcmpi(src.array, "B")
-    data = ([[0, src.samples(trig_ch,sample_order)]; ...% Prepend 0 to indicate triggers channel
-             [subset-1, samples]; ... % Offset by 1 because CREF is channel 1. Prepend one sample indicating which channel   
-             100, t])';           % Prepend 100 to indicate "time" channel
-else % Otherwise, don't give the "send meta" indicator.
-    data = ([[0, src.samples(trig_ch,sample_order)]; ...% Prepend 0 to indicate triggers channel
-             [subset-1, samples]])'; ... % Offset by 1 because CREF is channel 1. Prepend one sample indicating which channel
-end
+data = ([[0, src.samples(trig_ch,sample_order)]; ...% Prepend 0 to indicate triggers channel
+         [subset-1, samples]; ... % Offset by 1 because CREF is channel 1. Prepend one sample indicating which channel   
+         100, t])';           % Prepend 100 to indicate "time" channel
 visualizer.write(data(:), "double");
 end
