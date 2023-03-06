@@ -36,7 +36,7 @@ switch src.UserData.app.mode
         disp("RMS Contour mode not yet implemented.");
         
     otherwise
-        fprintf(1,"Unhandled mode: %s\n", src.app.mode);
+        fprintf(1,"Unhandled mode: %s\n", src.UserData.app.mode);
 end
         
         
